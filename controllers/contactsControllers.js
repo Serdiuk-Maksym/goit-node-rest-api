@@ -1,6 +1,13 @@
-import contactsService from "../services/contactsServices.js";
+import contactsService from '../services/contactsServices.js';
 
-export const getAllContacts = (req, res) => {};
+export const getAllContacts = async (req, res) => {
+  try {
+    const contacts = await listContacts();
+    res.status(200).json(contacts);
+  } catch (error) {
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
 
 export const getOneContact = (req, res) => {};
 
