@@ -3,28 +3,35 @@ import { fileURLToPath } from 'url';
 import path from 'path';
 
 const __filename = fileURLToPath(import.meta.url);
+
+// Отримати абсолютний шлях до директорії, в якій знаходиться поточний файл
 const __dirname = path.dirname(__filename);
 
-const contactsPath = path.join(__dirname, 'db', 'contacts.json');
+// Складання шляху до файлу contacts.json в директорії services
+const contactsPath = path.join(__dirname, '..', 'db', 'contacts.json');
 
-const listContacts = async () => {
+export const listContacts = async () => {
   try {
+    console.log('Reading contacts data from file...');
     const data = await fs.readFile(contactsPath, 'utf-8');
+    console.log('Parsing contacts data...');
     return JSON.parse(data);
   } catch (error) {
     if (error.code === 'ENOENT') {
+      console.log('Contacts file not found. Returning an empty array.');
       return [];
     }
+    console.error('Error reading contacts data:', error);
     throw error;
   }
 };
 
-const getContactById = async (contactId) => {
+export const getContactById = async (contactId) => {
   const contacts = await listContacts();
   return contacts.find((contact) => contact.id === contactId) || null;
 };
 
-const addContact = async ({ name, email, phone }) => {
+export const addContact = async ({ name, email, phone }) => {
   const contacts = await listContacts();
 
   const newContact = { name, email, phone };
@@ -34,7 +41,7 @@ const addContact = async ({ name, email, phone }) => {
   return newContact;
 };
 
-const removeContact = async (contactId) => {
+export const removeContact = async (contactId) => {
   const contacts = await listContacts();
   const contactIndex = contacts.findIndex(
     (contact) => contact.id === contactId
@@ -51,5 +58,3 @@ const removeContact = async (contactId) => {
 
   return contactToRemove;
 };
-
-export default { listContacts };
