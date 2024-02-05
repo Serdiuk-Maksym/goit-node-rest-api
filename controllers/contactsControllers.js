@@ -6,6 +6,7 @@ import {
 } from '../services/contactsServices.js';
 
 import HttpError from '../helpers/HttpError.js';
+import { contactSchema, contactUpdateSchema } from '../schemas/contactsSchemas';
 
 export const getAllContacts = async (req, res) => {
   try {
@@ -57,34 +58,39 @@ export const deleteContact = async (req, res) => {
 
 export const createContact = async (req, res) => {
   try {
-    const { name, email, phone } = req.body;
-    const newContact = await addContact({ name, email, phone });
+    const { error } = contactSchema.validate(req.body);
+    if (error) {
+      return res.status(400).json({ message: error.message });
+    }
+
+    const newContact = await addContact(req.body);
 
     res.status(201).json(newContact);
   } catch (error) {
-    res
-      .status(500)
-      .json({ error: new HttpError(500, 'Internal Server Error') });
+    console.error('Error creating contact:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
   }
 };
 
-export const updateContact = async (req, res) => {
+export const updateContactController = async (req, res) => {
   try {
     const contactId = req.params.id;
-    const { name, email, phone } = req.body;
-
     const existingContact = await getContactById(contactId);
 
     if (!existingContact) {
-      throw new HttpError(404, 'Contact not found');
+      return res.status(404).json({ message: 'Not found' });
     }
 
-    const updatedContact = { ...existingContact, name, email, phone };
+    const { error } = contactUpdateSchema.validate(req.body);
+    if (error) {
+      return res.status(400).json({ message: error.message });
+    }
+
+    const updatedContact = await updateContact(contactId, req.body);
 
     res.status(200).json(updatedContact);
   } catch (error) {
-    res
-      .status(500)
-      .json({ error: new HttpError(500, 'Internal Server Error') });
+    console.error('Error updating contact:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
   }
 };
