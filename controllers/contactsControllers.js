@@ -25,16 +25,14 @@ export const getOneContact = async (req, res) => {
     const contact = await getContactById(contactId);
 
     if (!contact) {
-      throw new HttpError('ContactNotFound', 'Contact not found', {
-        contactId,
-      });
+      res.status(404).json({ message: 'Not found' });
+    } else {
+      res.status(200).json(contact);
     }
-
-    res.status(200).json(contact);
   } catch (error) {
     console.error('Error getting one contact:', error);
     res.status(500).json({
-      error: new HttpError('InternalServerError', 'Internal Server Error'),
+      error: { message: 'Internal Server Error' },
     });
   }
 };
@@ -45,14 +43,15 @@ export const deleteContact = async (req, res) => {
     const deletedContact = await removeContact(contactId);
 
     if (!deletedContact) {
-      throw new HttpError(404, 'Contact not found');
+      res.status(404).json({ message: 'Not found' });
+    } else {
+      res
+        .status(200)
+        .json({ message: 'Contact deleted successfully', deletedContact });
     }
-
-    res.status(200).json(deletedContact);
   } catch (error) {
-    res
-      .status(500)
-      .json({ error: new HttpError(500, 'Internal Server Error') });
+    console.error('Error deleting contact:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
   }
 };
 

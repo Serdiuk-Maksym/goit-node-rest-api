@@ -4,10 +4,8 @@ import path from 'path';
 
 const __filename = fileURLToPath(import.meta.url);
 
-// Отримати абсолютний шлях до директорії, в якій знаходиться поточний файл
 const __dirname = path.dirname(__filename);
 
-// Складання шляху до файлу contacts.json в директорії services
 const contactsPath = path.join(__dirname, '..', 'db', 'contacts.json');
 
 export const listContacts = async () => {
