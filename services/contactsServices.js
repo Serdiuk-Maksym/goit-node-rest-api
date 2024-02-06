@@ -56,3 +56,32 @@ export const removeContact = async (contactId) => {
 
   return contactToRemove;
 };
+
+export const updateContact = async (contactId, updatedInfo) => {
+  try {
+    // Отримуємо список контактів
+    const contacts = await listContacts();
+
+    // Знаходимо індекс контакту, який потрібно оновити
+    const contactIndex = contacts.findIndex(
+      (contact) => contact.id === contactId
+    );
+
+    // Перевіряємо, чи контакт існує
+    if (contactIndex === -1) {
+      return null; // Якщо контакт не знайдено, повертаємо null
+    }
+
+    // Оновлюємо інформацію про контакт
+    contacts[contactIndex] = { ...contacts[contactIndex], ...updatedInfo };
+
+    // Записуємо оновлений список контактів у файл
+    await fs.writeFile(contactsPath, JSON.stringify(contacts, null, 2));
+
+    // Повертаємо оновлену інформацію про контакт
+    return contacts[contactIndex];
+  } catch (error) {
+    console.error('Error updating contact:', error);
+    throw error;
+  }
+};
