@@ -3,10 +3,18 @@ import {
   getContactById,
   removeContact,
   addContact,
+  updateContact,
 } from '../services/contactsServices.js';
 
 import HttpError from '../helpers/HttpError.js';
-import { contactSchema, contactUpdateSchema } from '../schemas/contactsSchemas';
+import {
+  createContactSchema,
+  updateContactSchema,
+} from '../schemas/contactsSchemas.js';
+
+const handleNotFound = (res) => {
+  res.status(404).json({ message: 'Not found' });
+};
 
 export const getAllContacts = async (req, res) => {
   try {
@@ -26,15 +34,13 @@ export const getOneContact = async (req, res) => {
     const contact = await getContactById(contactId);
 
     if (!contact) {
-      res.status(404).json({ message: 'Not found' });
+      handleNotFound(res);
     } else {
       res.status(200).json(contact);
     }
   } catch (error) {
     console.error('Error getting one contact:', error);
-    res.status(500).json({
-      error: { message: 'Internal Server Error' },
-    });
+    res.status(500).json({ error: { message: 'Internal Server Error' } });
   }
 };
 
@@ -44,7 +50,7 @@ export const deleteContact = async (req, res) => {
     const deletedContact = await removeContact(contactId);
 
     if (!deletedContact) {
-      res.status(404).json({ message: 'Not found' });
+      handleNotFound(res);
     } else {
       res
         .status(200)
@@ -58,7 +64,7 @@ export const deleteContact = async (req, res) => {
 
 export const createContact = async (req, res) => {
   try {
-    const { error } = contactSchema.validate(req.body);
+    const { error } = createContactSchema.validate(req.body);
     if (error) {
       return res.status(400).json({ message: error.message });
     }
@@ -78,10 +84,10 @@ export const updateContactController = async (req, res) => {
     const existingContact = await getContactById(contactId);
 
     if (!existingContact) {
-      return res.status(404).json({ message: 'Not found' });
+      return handleNotFound(res);
     }
 
-    const { error } = contactUpdateSchema.validate(req.body);
+    const { error } = updateContactSchema.validate(req.body);
     if (error) {
       return res.status(400).json({ message: error.message });
     }
