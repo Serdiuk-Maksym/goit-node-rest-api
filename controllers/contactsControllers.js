@@ -5,6 +5,7 @@ import {
   addContact,
   updateContact,
 } from '../services/contactsServices.js';
+import { v4 as uuidv4 } from 'uuid';
 
 import HttpError from '../helpers/HttpError.js';
 import {
@@ -69,9 +70,16 @@ export const createContact = async (req, res) => {
       return res.status(400).json({ message: error.message });
     }
 
-    const newContact = await addContact(req.body);
-
-    res.status(201).json(newContact);
+    try {
+      const newContact = await addContact(req.body);
+      res.status(201).json(newContact);
+    } catch (error) {
+      if (error.message === 'This contact is already exist') {
+        return res.status(400).json({ message: error.message });
+      } else {
+        throw error;
+      }
+    }
   } catch (error) {
     console.error('Error creating contact:', error);
     res.status(500).json({ message: 'Internal Server Error' });

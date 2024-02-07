@@ -1,3 +1,4 @@
+import { v4 as uuidv4 } from 'uuid';
 import { promises as fs } from 'fs';
 import { fileURLToPath } from 'url';
 import path from 'path';
@@ -32,8 +33,22 @@ export const getContactById = async (contactId) => {
 export const addContact = async ({ name, email, phone }) => {
   const contacts = await listContacts();
 
-  const newContact = { name, email, phone };
+  const existingContact = contacts.find(
+    (contact) =>
+      contact.name === name &&
+      contact.email === email &&
+      contact.phone === phone
+  );
+
+  if (existingContact) {
+    throw new Error('This contact is already exist');
+  }
+
+  const id = uuidv4().slice(0, 20);
+
+  const newContact = { id, name, email, phone };
   contacts.push(newContact);
+
   await fs.writeFile(contactsPath, JSON.stringify(contacts, null, 2));
 
   return newContact;
