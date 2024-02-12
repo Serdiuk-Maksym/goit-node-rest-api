@@ -1,4 +1,5 @@
 import Joi from 'joi';
+import Contact from './models/contact.js'; // Імпорт моделі контакту зі схемою
 
 export const createContactSchema = Joi.object({
   name: Joi.string().required(),
@@ -13,22 +14,20 @@ export const updateContactSchema = Joi.object({
 }).min(1);
 
 const validateBody = (schema) => {
-  const func = (req, _, next) => {
+  return (req, res, next) => {
     const { error } = schema.validate(req.body);
     if (error) {
-      next(HttpError(400, error.message));
+      return res.status(400).json({ message: error.message });
     }
     next();
   };
-
-  return func;
 };
 
-export const createContact = async (req, res, next) => {
+export const createContact = async (req, res) => {
   try {
-    validateBody(createContactSchema)(req, res, next);
-
-    const newContact = await addContact(req.body);
+    const { name, email, phone } = req.body;
+    const newContact = new Contact({ name, email, phone });
+    await newContact.save();
     res.status(201).json(newContact);
   } catch (error) {
     console.error('Error creating contact:', error);
@@ -36,21 +35,66 @@ export const createContact = async (req, res, next) => {
   }
 };
 
-export const updateContact = async (req, res, next) => {
+export const updateContact = async (req, res) => {
   try {
-    validateBody(updateContactSchema)(req, res, next);
-
     const contactId = req.params.id;
-    const existingContact = await getContactById(contactId);
-    if (!existingContact) {
-      return res.status(404).json({ message: 'Not found' });
-    }
+    const { name, email, phone } = req.body;
 
-    const updatedContact = await updateContact(contactId, req.body);
+    const updatedContact = await Contact.findByIdAndUpdate(
+      contactId,
+      { name, email, phone },
+      { new: true }
+    );
+
+    if (!updatedContact) {
+      return res.status(404).json({ message: 'Contact not found' });
+    }
 
     res.status(200).json(updatedContact);
   } catch (error) {
     console.error('Error updating contact:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
+
+export const getContacts = async (req, res) => {
+  try {
+    const contacts = await Contact.find();
+    res.status(200).json(contacts);
+  } catch (error) {
+    console.error('Error getting contacts:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
+
+export const getContactById = async (req, res) => {
+  try {
+    const contactId = req.params.id;
+    const contact = await Contact.findById(contactId);
+
+    if (!contact) {
+      return res.status(404).json({ message: 'Contact not found' });
+    }
+
+    res.status(200).json(contact);
+  } catch (error) {
+    console.error('Error getting contact by id:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
+
+export const deleteContact = async (req, res) => {
+  try {
+    const contactId = req.params.id;
+    const deletedContact = await Contact.findByIdAndDelete(contactId);
+
+    if (!deletedContact) {
+      return res.status(404).json({ message: 'Contact not found' });
+    }
+
+    res.status(200).json({ message: 'Contact deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting contact:', error);
     res.status(500).json({ message: 'Internal Server Error' });
   }
 };
