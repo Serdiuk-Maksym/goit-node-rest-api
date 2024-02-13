@@ -5,7 +5,6 @@ import {
   addContact,
   updateContact,
 } from '../services/contactsServices.js';
-import { v4 as uuidv4 } from 'uuid';
 
 import HttpError from '../helpers/HttpError.js';
 import {

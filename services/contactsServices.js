@@ -1,102 +1,98 @@
 import { v4 as uuidv4 } from 'uuid';
-import { promises as fs } from 'fs';
-import { fileURLToPath } from 'url';
-import path from 'path';
+import { MongoClient } from 'mongodb';
 
-const __filename = fileURLToPath(import.meta.url);
+const url =
+  'mongodb+srv://serdiukMO:Vfrc1992fcec@cluster0.z162u5v.mongodb.net/';
+const dbName = 'db-contacts';
+const collectionName = 'contacts';
 
-const __dirname = path.dirname(__filename);
+const client = new MongoClient(url, { useUnifiedTopology: true });
 
-const contactsPath = path.join(__dirname, '..', 'db', 'contacts.json');
-
-export const listContacts = async () => {
+// Підключення до бази даних MongoDB
+async function connectDB() {
   try {
-    console.log('Reading contacts data from file...');
-    const data = await fs.readFile(contactsPath, 'utf-8');
-    console.log('Parsing contacts data...');
-    return JSON.parse(data);
+    await client.connect();
+    console.log('Connected to the database');
   } catch (error) {
-    if (error.code === 'ENOENT') {
-      console.log('Contacts file not found. Returning an empty array.');
-      return [];
-    }
+    console.error('Error connecting to the database:', error);
+    throw error;
+  }
+}
+
+// Отримання посилання на колекцію
+function getCollection() {
+  const db = client.db(dbName);
+  return db.collection(collectionName);
+}
+
+// Отримання списку контактів
+export async function listContacts() {
+  try {
+    await connectDB();
+    const collection = getCollection();
+    const contacts = await collection.find().toArray();
+    return contacts;
+  } catch (error) {
     console.error('Error reading contacts data:', error);
     throw error;
   }
-};
+}
 
-export const getContactById = async (contactId) => {
-  const contacts = await listContacts();
-  return contacts.find((contact) => contact.id === contactId) || null;
-};
-
-export const addContact = async ({ name, email, phone }) => {
-  const contacts = await listContacts();
-
-  const existingContact = contacts.find(
-    (contact) =>
-      contact.name === name &&
-      contact.email === email &&
-      contact.phone === phone
-  );
-
-  if (existingContact) {
-    throw new Error('This contact is already exist');
-  }
-
-  const id = uuidv4().slice(0, 20);
-
-  const newContact = { id, name, email, phone };
-  contacts.push(newContact);
-
-  await fs.writeFile(contactsPath, JSON.stringify(contacts, null, 2));
-
-  return newContact;
-};
-
-export const removeContact = async (contactId) => {
-  const contacts = await listContacts();
-  const contactIndex = contacts.findIndex(
-    (contact) => contact.id === contactId
-  );
-
-  if (contactIndex === -1) {
-    return null;
-  }
-
-  const contactToRemove = contacts[contactIndex];
-  contacts.splice(contactIndex, 1);
-
-  await fs.writeFile(contactsPath, JSON.stringify(contacts, null, 2));
-
-  return contactToRemove;
-};
-
-export const updateContact = async (contactId, updatedInfo) => {
+// Отримання контакту за ідентифікатором
+export async function getContactById(contactId) {
   try {
-    // Отримуємо список контактів
-    const contacts = await listContacts();
+    await connectDB();
+    const collection = getCollection();
+    const contact = await collection.findOne({ id: contactId });
+    return contact;
+  } catch (error) {
+    console.error('Error fetching contact by id:', error);
+    throw error;
+  }
+}
 
-    // Знаходимо індекс контакту, який потрібно оновити
-    const contactIndex = contacts.findIndex(
-      (contact) => contact.id === contactId
+// Додавання нового контакту
+export async function addContact({ name, email, phone }) {
+  try {
+    await connectDB();
+    const collection = getCollection();
+    const id = uuidv4().slice(0, 20);
+    const newContact = { id, name, email, phone };
+    await collection.insertOne(newContact);
+    return newContact;
+  } catch (error) {
+    console.error('Error adding new contact:', error);
+    throw error;
+  }
+}
+
+// Видалення контакту за ідентифікатором
+export async function removeContact(contactId) {
+  try {
+    await connectDB();
+    const collection = getCollection();
+    const result = await collection.deleteOne({ id: contactId });
+    if (result.deletedCount === 0) return null;
+    return { id: contactId };
+  } catch (error) {
+    console.error('Error removing contact:', error);
+    throw error;
+  }
+}
+
+// Оновлення контакту за ідентифікатором
+export async function updateContact(contactId, updatedInfo) {
+  try {
+    await connectDB();
+    const collection = getCollection();
+    const result = await collection.updateOne(
+      { id: contactId },
+      { $set: updatedInfo }
     );
-
-    // Перевіряємо, чи контакт існує
-    if (contactIndex === -1) {
-      return null; // Якщо контакт не знайдено, повертаємо null
-    }
-
-    // Оновлюємо інформацію про контакт
-    contacts[contactIndex] = { ...contacts[contactIndex], ...updatedInfo };
-
-    // Записуємо оновлений список контактів у файл
-    await fs.writeFile(contactsPath, JSON.stringify(contacts, null, 2));
-
-    // Повертаємо оновлену інформацію про контакт
-    return contacts[contactIndex];
+    if (result.modifiedCount === 0) return null;
+    return { ...updatedInfo, id: contactId };
   } catch (error) {
     console.error('Error updating contact:', error);
     throw error;
   }
-};
+}
