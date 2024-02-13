@@ -12,7 +12,7 @@ const client = new MongoClient(url, { useUnifiedTopology: true });
 async function connectDB() {
   try {
     await client.connect();
-    console.log('Connected to the database');
+    // console.log('Connected to the database');
   } catch (error) {
     console.error('Error connecting to the database:', error);
     throw error;
@@ -43,7 +43,7 @@ export async function getContactById(contactId) {
   try {
     await connectDB();
     const collection = getCollection();
-    const contact = await collection.findOne({ id: contactId });
+    const contact = await collection.findOne({ _id: contactId });
     return contact;
   } catch (error) {
     console.error('Error fetching contact by id:', error);

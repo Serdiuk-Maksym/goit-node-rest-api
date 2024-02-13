@@ -1,16 +1,6 @@
-import {
-  listContacts,
-  getContactById,
-  removeContact,
-  addContact,
-  updateContact,
-} from '../services/contactsServices.js';
+import Contact from '../schemas/contactsSchemas.js';
 
 import HttpError from '../helpers/HttpError.js';
-import {
-  createContactSchema,
-  updateContactSchema,
-} from '../schemas/contactsSchemas.js';
 
 const handleNotFound = (res) => {
   res.status(404).json({ message: 'Not found' });
@@ -18,7 +8,7 @@ const handleNotFound = (res) => {
 
 export const getAllContacts = async (req, res) => {
   try {
-    const contacts = await listContacts();
+    const contacts = await Contact.find();
     res.status(200).json(contacts);
   } catch (error) {
     console.error('Error getting all contacts:', error);
@@ -31,7 +21,7 @@ export const getAllContacts = async (req, res) => {
 export const getOneContact = async (req, res) => {
   try {
     const contactId = req.params.id;
-    const contact = await getContactById(contactId);
+    const contact = await Contact.findById(contactId);
 
     if (!contact) {
       handleNotFound(res);
@@ -47,7 +37,7 @@ export const getOneContact = async (req, res) => {
 export const deleteContact = async (req, res) => {
   try {
     const contactId = req.params.id;
-    const deletedContact = await removeContact(contactId);
+    const deletedContact = await Contact.findByIdAndDelete(contactId);
 
     if (!deletedContact) {
       handleNotFound(res);
@@ -69,16 +59,16 @@ export const createContact = async (req, res) => {
       return res.status(400).json({ message: error.message });
     }
 
-    try {
-      const newContact = await addContact(req.body);
-      res.status(201).json(newContact);
-    } catch (error) {
-      if (error.message === 'This contact is already exist') {
-        return res.status(400).json({ message: error.message });
-      } else {
-        throw error;
-      }
+    const { name, email, phone, favorite } = req.body;
+
+    const existingContact = await Contact.findOne({ email });
+    if (existingContact) {
+      return res.status(400).json({ message: 'This contact already exists' });
     }
+
+    const newContact = new Contact({ name, email, phone, favorite });
+    await newContact.save();
+    res.status(201).json(newContact);
   } catch (error) {
     console.error('Error creating contact:', error);
     res.status(500).json({ message: 'Internal Server Error' });
@@ -88,7 +78,11 @@ export const createContact = async (req, res) => {
 export const updateContactController = async (req, res) => {
   try {
     const contactId = req.params.id;
-    const existingContact = await getContactById(contactId);
+    const existingContact = await Contact.findByIdAndUpdate(
+      contactId,
+      req.body,
+      { new: true }
+    );
 
     if (!existingContact) {
       return handleNotFound(res);
@@ -99,9 +93,7 @@ export const updateContactController = async (req, res) => {
       return res.status(400).json({ message: error.message });
     }
 
-    const updatedContact = await updateContact(contactId, req.body);
-
-    res.status(200).json(updatedContact);
+    res.status(200).json(existingContact);
   } catch (error) {
     console.error('Error updating contact:', error);
     res.status(500).json({ message: 'Internal Server Error' });
