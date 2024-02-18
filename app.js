@@ -11,10 +11,12 @@ import {
 
 const app = express();
 
-mongoose.connect(
-  'mongodb+srv://serdiukMO:Vfrc1992fcec@cluster0.z162u5v.mongodb.net/myDatabase/db-contacts/',
-  {}
-);
+const mongoose = require('mongoose');
+
+const DB_HOST =
+  'mongodb+srv://Serdiuk:Vfrc1992@cluster0.xc0qx8y.mongodb.net/db-contacts?retryWrites=true&w=majority';
+
+mongoose.connect(DB_HOST);
 
 const db = mongoose.connection;
 db.on('error', console.error.bind(console, 'Database connection error:'));
@@ -116,27 +118,4 @@ app.patch('/api/contacts/:contactId/favorite', async (req, res) => {
     console.error('Error updating favorite status:', error);
     res.status(500).json({ message: 'Internal Server Error' });
   }
-});
-
-// Функція для оновлення статусу контакту
-async function updateStatusContact(contactId, updateData) {
-  try {
-    const existingContact = await Contact.findById(contactId);
-
-    if (!existingContact) {
-      return null;
-    }
-
-    existingContact.favorite = updateData.favorite;
-    await existingContact.save();
-
-    return existingContact;
-  } catch (error) {
-    throw error;
-  }
-}
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
 });

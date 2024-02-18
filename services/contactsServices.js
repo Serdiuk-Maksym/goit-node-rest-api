@@ -1,98 +1,58 @@
-import { v4 as uuidv4 } from 'uuid';
-import { MongoClient } from 'mongodb';
+import { nanoid } from 'nanoid';
+import Contact from '../models/contact.js';
 
-const url =
-  'mongodb+srv://serdiukMO:Vfrc1992fcec@cluster0.z162u5v.mongodb.net/';
-const dbName = 'db-contacts';
-const collectionName = 'contacts';
-
-const client = new MongoClient(url, { useUnifiedTopology: true });
-
-// Підключення до бази даних MongoDB
-async function connectDB() {
-  try {
-    await client.connect();
-    // console.log('Connected to the database');
-  } catch (error) {
-    console.error('Error connecting to the database:', error);
-    throw error;
-  }
+async function listContacts(query = {}, fields = '', options = {}) {
+  const contacts = await Contact.find(query, fields, options).populate(
+    'owner',
+    'email'
+  );
+  return contacts;
 }
 
-// Отримання посилання на колекцію
-function getCollection() {
-  const db = client.db(dbName);
-  return db.collection(collectionName);
+async function getContactById(id) {
+  const contact = await Contact.findById(id);
+  return contact || null;
 }
 
-// Отримання списку контактів
-export async function listContacts() {
-  try {
-    await connectDB();
-    const collection = getCollection();
-    const contacts = await collection.find().toArray();
-    return contacts;
-  } catch (error) {
-    console.error('Error reading contacts data:', error);
-    throw error;
-  }
+async function removeContact(id) {
+  const removedContact = await Contact.findByIdAndDelete(id);
+  return removedContact || null;
 }
 
-// Отримання контакту за ідентифікатором
-export async function getContactById(contactId) {
-  try {
-    await connectDB();
-    const collection = getCollection();
-    const contact = await collection.findOne({ _id: contactId });
-    return contact;
-  } catch (error) {
-    console.error('Error fetching contact by id:', error);
-    throw error;
-  }
+async function addContact(data) {
+  const newContact = await Contact.create({
+    id: nanoid(),
+    ...data,
+  });
+
+  return newContact;
 }
 
-// Додавання нового контакту
-export async function addContact({ name, email, phone }) {
-  try {
-    await connectDB();
-    const collection = getCollection();
-    const id = uuidv4().slice(0, 20);
-    const newContact = { id, name, email, phone };
-    await collection.insertOne(newContact);
-    return newContact;
-  } catch (error) {
-    console.error('Error adding new contact:', error);
-    throw error;
-  }
+async function updateContactById(id, data) {
+  const updatedContact = await Contact.findByIdAndUpdate(
+    id,
+    { $set: data },
+    { new: true }
+  );
+
+  return updatedContact || null;
 }
 
-// Видалення контакту за ідентифікатором
-export async function removeContact(contactId) {
-  try {
-    await connectDB();
-    const collection = getCollection();
-    const result = await collection.deleteOne({ id: contactId });
-    if (result.deletedCount === 0) return null;
-    return { id: contactId };
-  } catch (error) {
-    console.error('Error removing contact:', error);
-    throw error;
-  }
+async function updateStatusContact(id, data) {
+  const updatedContact = await Contact.findByIdAndUpdate(
+    id,
+    { $set: data },
+    { new: true }
+  );
+
+  return updatedContact || null;
 }
 
-// Оновлення контакту за ідентифікатором
-export async function updateContact(contactId, updatedInfo) {
-  try {
-    await connectDB();
-    const collection = getCollection();
-    const result = await collection.updateOne(
-      { id: contactId },
-      { $set: updatedInfo }
-    );
-    if (result.modifiedCount === 0) return null;
-    return { ...updatedInfo, id: contactId };
-  } catch (error) {
-    console.error('Error updating contact:', error);
-    throw error;
-  }
-}
+export {
+  listContacts,
+  getContactById,
+  removeContact,
+  addContact,
+  updateContactById,
+  updateStatusContact,
+};
