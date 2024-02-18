@@ -7,7 +7,7 @@ const app = express();
 const DB_HOST =
   'mongodb+srv://Serdiuk:Vfrc1992@cluster0.xc0qx8y.mongodb.net/db-contacts?retryWrites=true&w=majority';
 
-mongoose.connect(DB_HOST);
+mongoose.connect(DB_HOST, {});
 
 const db = mongoose.connection;
 db.on('error', console.error.bind(console, 'Database connection error:'));
