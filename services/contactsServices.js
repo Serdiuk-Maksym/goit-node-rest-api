@@ -1,12 +1,14 @@
 import { nanoid } from 'nanoid';
 import Contact from '../models/contact.js';
 
-async function listContacts(query = {}, fields = '', options = {}) {
-  const contacts = await Contact.find(query, fields, options).populate(
-    'owner',
-    'email'
-  );
-  return contacts;
+async function listContacts() {
+  try {
+    const contacts = await Contact.find();
+    return contacts;
+  } catch (error) {
+    console.error('Error listing contacts:', error);
+    throw error;
+  }
 }
 
 async function getContactById(id) {
@@ -20,12 +22,16 @@ async function removeContact(id) {
 }
 
 async function addContact(data) {
-  const newContact = await Contact.create({
-    id: nanoid(),
-    ...data,
-  });
-
-  return newContact;
+  try {
+    const newContact = await Contact.create({
+      id: nanoid(),
+      ...data,
+    });
+    return newContact;
+  } catch (error) {
+    console.error('Error creating contact:', error);
+    throw new Error('Error creating contact');
+  }
 }
 
 async function updateContactById(id, data) {
