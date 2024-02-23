@@ -44,14 +44,22 @@ async function updateContactById(id, data) {
   return updatedContact || null;
 }
 
-async function updateStatusContact(id, data) {
-  const updatedContact = await Contact.findByIdAndUpdate(
-    id,
-    { $set: data },
-    { new: true }
-  );
+async function updateFavorite(id, favorite) {
+  try {
+    const updatedContact = await Contact.findByIdAndUpdate(
+      id,
+      { favorite },
+      { new: true, runValidators: true }
+    );
 
-  return updatedContact || null;
+    if (!updatedContact) {
+      return null;
+    }
+
+    return updatedContact;
+  } catch (error) {
+    throw new Error('Failed to update favorite status');
+  }
 }
 
 export {
@@ -60,5 +68,5 @@ export {
   removeContact,
   addContact,
   updateContactById,
-  updateStatusContact,
+  updateFavorite,
 };
