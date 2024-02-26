@@ -71,6 +71,11 @@ export const updateContact = async (req, res) => {
     const { id } = req.params;
     const { body } = req;
 
+    // Перевірка, чи тіло запиту не є порожнім
+    if (Object.keys(body).length === 0) {
+      return res.status(400).json({ error: 'No data provided for update' });
+    }
+
     const { error: validationError } = validateBody(body);
     if (validationError) {
       return res.status(400).json({ error: validationError.message });
@@ -93,11 +98,16 @@ export const updateFavorite = async (req, res) => {
     const { id } = req.params;
     const { favorite } = req.body;
 
+    if (favorite === undefined) {
+      return res.status(400).json({ error: 'No value provided for update' });
+    }
+
     const updatedContact = await contactsService.updateFavorite(id, favorite);
 
     if (!updatedContact) {
       return res.status(404).json({ error: 'Not Found' });
     }
+
     res.json(updatedContact);
   } catch (error) {
     res.status(500).json({ error: error.message });
