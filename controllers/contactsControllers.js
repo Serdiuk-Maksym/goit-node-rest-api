@@ -71,6 +71,7 @@ export const updateContact = async (req, res) => {
     const { id } = req.params;
     const { body } = req;
 
+
     // Перевірка, чи тіло запиту не є порожнім
     if (Object.keys(body).length === 0) {
       return res.status(400).json({ error: 'No data provided for update' });
@@ -79,16 +80,32 @@ export const updateContact = async (req, res) => {
     const { error: validationError } = validateBody(body);
     if (validationError) {
       return res.status(400).json({ error: validationError.message });
+
     }
 
-    const updatedContact = await contactsService.updateContactById(id, body);
+    if (!body || Object.keys(body).length === 0) {
+      return res
+        .status(400)
+        .json({ message: 'Body must have at least one field' });
+    }
+
+    const { error } = updateContactSchema.validate(body);
+    if (error) {
+      return res.status(400).json({ message: error.message });
+    }
+
+    console.log('Attempting to update contact with id:', id);
+
+    const updatedContact = await contactsService.updateContactById(id, body); // Зміни тут
 
     if (!updatedContact) {
-      return res.status(404).json({ error: 'ID not found' });
+      return res.status(404).json({ message: 'Not found' });
     }
 
-    res.json(updatedContact);
+    console.log('Contact updated successfully, returning updated contact...');
+    res.status(200).json({ message: 'Contact updated successfully' });
   } catch (error) {
+    console.error('Error occurred in updateContact controller:', error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -98,18 +115,20 @@ export const updateFavorite = async (req, res) => {
     const { id } = req.params;
     const { favorite } = req.body;
 
+
     if (favorite === undefined) {
       return res.status(400).json({ error: 'No value provided for update' });
+
     }
 
     const updatedContact = await contactsService.updateFavorite(id, favorite);
 
     if (!updatedContact) {
-      return res.status(404).json({ error: 'Not Found' });
+      return res.status(404).json({ error: 'Contact not found' });
     }
 
     res.json(updatedContact);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Failed to update favorite status' });
   }
 };

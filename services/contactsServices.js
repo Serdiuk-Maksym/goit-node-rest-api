@@ -35,13 +35,17 @@ async function addContact(data) {
 }
 
 async function updateContactById(id, data) {
-  const updatedContact = await Contact.findByIdAndUpdate(
-    id,
-    { $set: data },
-    { new: true }
-  );
-
-  return updatedContact || null;
+  try {
+    const updatedContact = await Contact.findByIdAndUpdate(
+      id,
+      { $set: data },
+      { new: true }
+    );
+    return updatedContact || null;
+  } catch (error) {
+    console.error('Error updating contact by id:', error);
+    return null;
+  }
 }
 
 async function updateFavorite(id, favorite) {
