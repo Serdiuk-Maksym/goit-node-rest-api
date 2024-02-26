@@ -71,8 +71,16 @@ export const updateContact = async (req, res) => {
     const { id } = req.params;
     const { body } = req;
 
-    if (!id) {
-      return res.status(400).json({ message: 'ID parameter is missing' });
+
+    // Перевірка, чи тіло запиту не є порожнім
+    if (Object.keys(body).length === 0) {
+      return res.status(400).json({ error: 'No data provided for update' });
+    }
+
+    const { error: validationError } = validateBody(body);
+    if (validationError) {
+      return res.status(400).json({ error: validationError.message });
+
     }
 
     if (!body || Object.keys(body).length === 0) {
@@ -107,10 +115,10 @@ export const updateFavorite = async (req, res) => {
     const { id } = req.params;
     const { favorite } = req.body;
 
-    if (!req.body.hasOwnProperty('favorite')) {
-      return res
-        .status(400)
-        .json({ error: 'Favorite property is missing in request body' });
+
+    if (favorite === undefined) {
+      return res.status(400).json({ error: 'No value provided for update' });
+
     }
 
     const updatedContact = await contactsService.updateFavorite(id, favorite);
